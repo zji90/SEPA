@@ -1,0 +1,133 @@
+%\VignetteIndexEntry{SEPA: Single-Cell Gene Expression Pattern Analysis} 
+%\VignetteDepends{} 
+% \VignetteEngine{knitr::knitr}
+%\VignettePackage{SEPA}
+
+\documentclass[10pt,oneside]{article}
+\usepackage[utf8]{inputenc}
+\setlength\parindent{0pt}
+
+\newcommand{\thetitle}{SEPA: Single-Cell Gene Expression Pattern Analysis}
+
+\title{\textsf{\textbf{\thetitle}}}
+\author{Zhicheng Ji\\[1em]Johns Hopkins University,\\ Baltimore, Maryland, USA\\
+\texttt{zji4@jhu.edu} \and
+Hongkai Ji\\[1em]Johns Hopkins University,\\ Baltimore, Maryland, USA\\
+\texttt{hji@jhsph.edu}}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introductions}
+Single-cell high-throughput transcriptomics is a powerful approach to study the heterogeneity of gene expression activities on single-cell level. Compared to traditional bulk transcriptomics experiments, single-cell RNA-seq significantly increase the resolution of gene expression and thus can lead to many new biological discoveries. Many of the single-cell transcriptomics researches focus on the differentiation of various cell types and hope to find how the expression of genes and key regulatory factors changes over the differentiation process [1,2]. These single-cell RNA-seq data often contain the gene expression profiles of cells extracted from multiple experimental time points. There is also existing computatioin tool such as Monocle [3] that uses unsupervised machine learning methods to order whole-transcriptome profiles of single cells along 'pseudotime', a hypothesized time course which can quantitatively measure the real biological process of differentiation. This pseudotime course is then used to study how gene expressions change over the differentiation process. Such pseudo time cell ordering concept provides a novel method of exploring single-cell RNA-seq data.
+
+If one has available true experimental time or pseudo temporal cell ordering information, a natural question to ask is what expression patterns do these genes have along the true or pseudo time axis. The expression patterns could be constant, monotonic change, or some transition patterns like first increasing followed by decreasing in gene expressions. It would be even more interesting to investigate what kind of biological functions do genes with similar expression patterns share. These results may provide deeper insights into the biological process and guidelines for researchers to study the function of individual genes. Such kind of analysis is unique for single-cell RNA-seq data, since the bulk RNA-seq experiments usually do not have enough sample size to obtain a robust estimate of the patterns while single-cell RNA-seq data often contain hundreds of cells for each experiment time point. Pseudo time cell ordering is also a unique feature of single-cell RNA-seq.
+
+However, currently there is no available computational tool for such kind of down stream analysis. In Monocle [3], gene expression patterns are clustered and identified manually, which is somehow arbitrary. Thus we propose SEPA: a systematic and comprehensive tool to study the gene expression patterns for single-cell RNA-seq. SEPA is designed for general single-cell RNA-seq data. SEPA takes input true experiement time or pseudo temporal cell ordering information. SEPA first computationally identify the gene expression patterns using a set of t-tests (for true experiment time) or segmented linear regression (for pseudo temporal cell ordering). SEPA then performs GO analysis on genes with similar expression patterns. A special kind of GO analysis with moving windows is also available for pseudo temporal cell ordering information. Finally, users also have the option to identify genes with different gene expression patterns in true experiment time or pseudo-time axis. This function is important if users want to find genes with so-called "Simpsons Paradox".
+
+SEPA comes with a powerful Graphical User Interface written in R shiny package. It allows users without prior programming knowledge to conveniently identify and explore the gene expression patterns. SEPA has an online user interface which is freely available at https://zhiji.shinyapps.io/SEPA/. However, the online user interface only allows one concurrent user so it is recommended that users launch SEPA on their own computers.
+
+\section{Identify and Visualize Pattern for True Experiment Time Points}
+
+The function truetimepattern can be used to identify gene expression patterns given true experiment time points. The output of the function will be a named vector of patterns. Note that appropriate transformations on gene expression matrix (e.g. log2 transformation) should be done before calling this function.
+
+<<>>=
+library(SEPA)
+library(topGO)
+library(ggplot2)
+library(org.Hs.eg.db)
+data(HSMMdata)
+truepattern <- truetimepattern(HSMMdata,truetime)
+head(truepattern)
+@
+
+Use patternsummary function to check the number of genes for each pattern.
+
+<<>>==
+patternsummary(truepattern)
+@
+
+Visualize the mean gene expression using the pseudotimevisualize function.
+
+<<>>=
+truetimevisualize(HSMMdata,truetime,"ENSG00000122180.4")
+@
+
+
+\section{Identify and Visualize Pattern for Pseudo Temporal Cell Ordering}
+
+The function pseudotimepattern can be used to identify gene expression patterns given pseudo-time. The pseudo-time can be obtained by the Monocle package. Note that if there are multiple cell paths, users should perform the analysis one path at a time. The output of the function will be a list. Note that appropriate transformations on gene expression matrix (e.g. log2 transformation) should be done before calling this function.
+
+<<>>=
+data(HSMMdata)
+pseudopattern <- pseudotimepattern(HSMMdata,pseudotime)
+@
+
+Use patternsummary function to check the number of genes for each pattern.
+
+<<>>==
+patternsummary(pseudopattern)
+@
+
+Check the transition points for transition patterns.
+
+<<>>=
+head(pseudopattern$pattern$constant_up)
+@
+
+Visualize the gene expression using the pseudotimevisualize function. For visualizing the expression of a single gene, a scatter plot will be displayed. The black color of the line stands for constant pattern, green stands for increasing pattern and red stands for decreasing pattern. The blue line on the top of the plot shows the estimated mean and 95\% confidence interval of the transition points.
+
+<<>>=
+pseudotimevisualize(pseudopattern,"ENSG00000122180.4")
+@
+
+For visualizing the expression of multiple genes, a heatmap will be displayed. The black dots and line segments show the estimated mean and 95\% confidence interval of the transition points.
+
+<<>>=
+pseudotimevisualize(pseudopattern,c("ENSG00000122180.4","ENSG00000108821.9"))
+@
+
+\section{GO analysis}
+
+The function patternGOanalysis will perform GO analysis for genes with the same expression patterns. The background gene list is all genes in the expression profile (518 genes in this example) 
+
+GO analysis for the true experiment time points. The result is a list. Each element is a data.frame of GO analysis results.
+
+<<message=FALSE>>=
+patternGOanalysis(truepattern,type=c("constant_up","constant_down"),termnum = 5)
+@
+
+GO analysis for the pseudo time. 
+
+<<message=FALSE>>=
+patternGOanalysis(pseudopattern,type=c("constant_up","constant_down"),termnum = 5)
+@
+
+In additional to tranditional GO analysis, SEPA also provides a specific kind of GO analysis for genes with transition patterns. For example for all genes with pattern of constant then up, SEPA first orders all genes according to the transition points. Then SEPA performs GO analysis interatively on the first-20th genes, then 11th-30th genes, then 18th-37th genes (See example below). In this way users can explore the continuous change of biological functions associated with genes with similar expression patterns.
+
+<<message=FALSE>>=
+(GOresults <- windowGOanalysis(pseudopattern,type="constant_up",windowsize = 20, termnum=5))
+@
+
+windowGOvisualize function can be used to visualize the GO analysis results from windowGOanalysis function.
+
+<<>>=
+windowGOvisualize(GOresults)
+@
+
+\section{SEPA GUI}
+In addition to the basic command lines tools discussed above, SEPA provides a powerful which provides more comprehensive and convenient functions for gene expression pattern analysis. For example, users can easily transform raw gene expression data and convert gene identifiers before the analysis; save the result tables and plots of publication quality; identify genes with different expression patterns on true time and pseudo-time axis. Users are encouraged to use SEPA GUI.
+
+
+\section{Reference}
+[1] Bendall, S. C., Simonds, E. F., Qiu, P., El-ad, D. A., Krutzik, P. O., Finck, R., ... \& Nolan, G. P. (2011). Single-cell mass cytometry of differential immune and drug responses across a human hematopoietic continuum. Science, 332(6030), 687-696.
+
+[2] Tang, F., Barbacioru, C., Bao, S., Lee, C., Nordman, E., Wang, X., ... \& Surani, M. A. (2010). Tracing the derivation of embryonic stem cells from the inner cell mass by single-cell RNA-Seq analysis. Cell stem cell, 6(5), 468-478.
+
+[3] Trapnell, C., Cacchiarelli, D., Grimsby, J., Pokharel, P., Li, S., Morse, M., ... \& Rinn, J. L. (2014). The dynamics and regulators of cell fate decisions are revealed by pseudotemporal ordering of single cells. Nature biotechnology.
+
+\end{document}
+
