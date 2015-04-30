@@ -504,7 +504,7 @@ shinyServer(function(input, output,session) {
                                           }
                                     }
                                     if ((input$Pseudotimesimplify && slopecol[1] == slopecol[2]) || (input$Pseudotimeignoreconst && (slopecol[1]=="constant" || slopecol[2]=="constant"))) {
-                                          notransgene <- c(notransgene,transgene[1])
+                                          notransgene <- c(notransgene,transgene[i])
                                     } else {                                    
                                           pattern[i,1] <- paste0(slopecol,collapse = "_")
                                           pattern[i,2] <- confint(o.seg1)$x[1]

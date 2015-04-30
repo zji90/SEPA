@@ -21,7 +21,7 @@
 #' data(HSMMdata)
 #' pseudotimepattern(HSMMdata,pseudotime)
 
-pseudotimepattern <- function(expr,pseudotime,simplify=F,removeconstant=F,plot=F,gap=10) {
+pseudotimepattern <- function(expr,pseudotime,simplify=T,removeconstant=F,plot=F,gap=10) {
       # presettings
       fastRSS <- function(X, y) {
             XtX <- crossprod(X)
@@ -90,7 +90,7 @@ pseudotimepattern <- function(expr,pseudotime,simplify=F,removeconstant=F,plot=F
                   slopecol <- slopecol[slopecol!="black"]
             }
             if (length(slopecol) < 2 | (simplify & slopecol[1] == slopecol[2])) {
-                  notransgene <- c(notransgene,transgene[1])
+                  notransgene <- c(notransgene,transgene[i])
             } else {
                   if (plot) {plot(x,y,pch=20,main=transgene[i])
                              plot(o.seg1,add=T,link=F,lwd=3,col=slopecol,rug=F)
