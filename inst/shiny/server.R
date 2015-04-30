@@ -706,7 +706,7 @@ shinyServer(function(input, output,session) {
                   linesegmat[,4] <- length(gene) + 1 - linesegmat[,4]
                   geneexpr <- t(apply(geneexpr,1,scale))
                   geneexpr <- melt(geneexpr)                                          
-                  p <- ggplot(data=geneexpr, aes(x=Var2, y=Var1)) + geom_tile(aes(fill = value)) + scale_fill_gradient(low = "blue",high = "red") +
+                  p <- ggplot(data=geneexpr, aes(x=Var2, y=Var1)) + geom_tile(aes(fill = value)) + scale_fill_gradient2(low = "blue",high = "red",mid="white") +
                         geom_segment(aes(x=x,xend=xend,y=y,yend=yend),data=data.frame(x=linesegmat[,2],xend=linesegmat[,3],y=linesegmat[,4],yend=linesegmat[,4])) +
                         geom_point(aes(x=x,y=y),data=data.frame(x=linesegmat[,1],y=linesegmat[,4]))                        
                   p + xlab("Cell") +
@@ -955,7 +955,7 @@ shinyServer(function(input, output,session) {
                   }
                   colnames(rankres)[2] <- "GOterm"
                   if (input$PseudotimeGOanalysisTimeselectresulttimetrendshowheatmap) {
-                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
                   } else {
                         p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
                         geom_line(aes(group=GOterm)) + tmpyset +
@@ -1011,7 +1011,7 @@ output$PseudotimeGOanalysisTimeshowresultwindowplotsave <- downloadHandler(
                   }
                   colnames(rankres)[2] <- "GOterm"
                   if (input$PseudotimeGOanalysisTimeselectresulttimetrendshowheatmap) {
-                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
                   } else {
                         p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
                               geom_line(aes(group=GOterm)) + tmpyset +

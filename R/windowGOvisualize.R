@@ -43,7 +43,7 @@ windowGOvisualize <- function(GOres,GOterm=NULL,topterm=2,mode="Heatmap") {
       }
       colnames(rankres)[2] <- "GOterm"
       if (mode=="Heatmap") {
-            p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient(low = "white",high = "steelblue")
+            p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
       } else {
             p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
                   geom_line(aes(group=GOterm)) + tmpyset +
