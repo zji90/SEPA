@@ -6,8 +6,8 @@
 #' top GO terms in each time window
 #' 
 #' @param GOres The direct output of windowGOanalysis function.
-#' @param GOterm The name of GO term to be displayed. If NULL, top GO terms will be displayed instead
-#' @param topterm The number of top GO terms to be displayed. This argument only works when GOterm is NULL.
+#' @param GOTerm The name of GO term to be displayed. If NULL, top GO terms will be displayed instead
+#' @param topterm The number of top GO terms to be displayed. This argument only works when GOTerm is NULL.
 #' @param mode To plot in heatmap or line graph. Either "Heatmap" or "Line".
 #' @return A ggplot2 object.
 #' @import ggplot2
@@ -20,12 +20,17 @@
 #' pattern <- pseudotimepattern(HSMMdata,pseudotime)
 #' windowGOvisualize(windowGOanalysis(pattern,type="constant_up"))
 
-windowGOvisualize <- function(GOres,GOterm=NULL,topterm=2,mode="Heatmap") {      
+windowGOvisualize <- function(GOres,GOTerm=NULL,topterm=2,mode="Heatmap") {      
       termnum <- nrow(GOres[[1]])
-      if (is.null(GOterm)) {                  
-            GOterm <- unique(as.vector(sapply(GOres,function(i) i[1:topterm,1])))
+      if (is.null(GOTerm)) {                  
+            GOTerm <- unique(as.vector(sapply(GOres,function(i) i[1:topterm,1])))
       }
-      rankres <- sapply(GOterm,function(term) {
+      GOdes <- NULL
+      for (i in GOres) {
+            GOdes <- rbind(GOdes,as.matrix(i[,1:2]))
+      }
+      GOdes <- unique(GOdes)
+      rankres <- sapply(GOTerm,function(term) {
             sapply(GOres,function(i) {
                   tmp <- which(i[,1]==term)
                   if (length(tmp) == 0) 
@@ -42,12 +47,13 @@ windowGOvisualize <- function(GOres,GOterm=NULL,topterm=2,mode="Heatmap") {
             tickpos <- tickpos[tickpos < termnum + 1]
             tmpyset <- scale_y_reverse(lim=c(termnum + 1,1),breaks=c(tickpos,(termnum+1)),labels=c(tickpos,paste(">",termnum)))
       }
-      colnames(rankres)[2] <- "GOterm"
+      colnames(rankres)[2] <- "GOTerm"
+      rankres[,2] <- paste0(rankres[,2],"\n",sapply(rankres[,2], function(i) GOdes[GOdes[,1]==i,2]))
       if (mode=="Heatmap") {
-            p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
+            p <- ggplot(data=rankres, aes(x=Var1, y=GOTerm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
       } else {
-            p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
-                  geom_line(aes(group=GOterm)) + tmpyset +
+            p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOTerm)) +
+                  geom_line(aes(group=GOTerm)) + tmpyset +
                   geom_point(size=4)
       }
       p + xlab("Interval") +

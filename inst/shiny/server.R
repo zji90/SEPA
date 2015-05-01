@@ -490,9 +490,12 @@ shinyServer(function(input, output,session) {
                                     y <- expr[transgene[i],]
                                     fit <- lm(y~x)
                                     o.seg1 <- tryCatch(segmented(fit,seg.Z=~x,psi=breakpoint[transpos[i]]),error=function(e) {}) 
-                                    if (is.null(o.seg1) || o.seg1$psi[2] <= x[gap] || o.seg1$psi[2] >= x[length(x)-gap+1]) {
+                                    if (is.null(o.seg1)) {
                                           suppressWarnings(o.seg1 <- segmented(fit,seg.Z=~x,psi=breakpoint[transpos[i]],control = seg.control(n.boot=0,it.max=1)))            
                                     }      
+                                    if (o.seg1$psi[2] <= x[gap] || o.seg1$psi[2] >= x[length(x)-gap+1]) {
+                                          notransgene <- c(notransgene,transgene[i])
+                                    } else {
                                     slopecol <- rep("constant",2)
                                     for (j in 1:2) {
                                           if (slope(o.seg1)$x[j,4] * slope(o.seg1)$x[j,5] > 0) {
@@ -511,7 +514,8 @@ shinyServer(function(input, output,session) {
                                           pattern[i,3] <- confint(o.seg1)$x[2]
                                           pattern[i,4] <- confint(o.seg1)$x[3]      
                                           fitexpr[transgene[i],] <- fitted(o.seg1)
-                                    }            
+                                    }         
+                                    }
                                     incProgress(1/length(transgene), detail = paste("Calculating transition point for gene", i))                                    
                               }
                               
@@ -936,6 +940,11 @@ shinyServer(function(input, output,session) {
                   } else {
                         GOterm <- unique(as.vector(sapply(GOres,function(i) i[1:as.numeric(input$PseudotimeGOanalysisTimeselectresulttimetrendtop),1])))
                   }
+                  GOdes <- NULL
+                  for (i in GOres) {
+                        GOdes <- rbind(GOdes,as.matrix(i[,1:2]))
+                  }
+                  GOdes <- unique(GOdes)
                   rankres <- sapply(GOterm,function(term) {
                         sapply(GOres,function(i) {
                               tmp <- which(i[,1]==term)
@@ -953,12 +962,13 @@ shinyServer(function(input, output,session) {
                         tickpos <- tickpos[tickpos < termnum + 1]
                         tmpyset <- scale_y_reverse(lim=c(termnum + 1,1),breaks=c(tickpos,(termnum+1)),labels=c(tickpos,paste(">",termnum)))
                   }
-                  colnames(rankres)[2] <- "GOterm"
+                  colnames(rankres)[2] <- "GOTerm"
+                  rankres[,2] <- paste0(rankres[,2],"\n",sapply(rankres[,2], function(i) GOdes[GOdes[,1]==i,2]))
                   if (input$PseudotimeGOanalysisTimeselectresulttimetrendshowheatmap) {
-                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
+                        p <- ggplot(data=rankres, aes(x=Var1, y=GOTerm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
                   } else {
-                        p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
-                        geom_line(aes(group=GOterm)) + tmpyset +
+                        p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOTerm)) +
+                        geom_line(aes(group=GOTerm)) + tmpyset +
                         geom_point(size=4)
                   }
                         p + xlab("Interval") +
@@ -975,7 +985,8 @@ shinyServer(function(input, output,session) {
                               strip.text.y = element_text(size=17,color='black'),      
                               legend.text = element_text(size=15),
                               legend.title = element_text(size=15),
-                              legend.position = "right"                              
+                              legend.position = "right",
+                              legend.key.width=unit(3,"line"),legend.key.height=unit(3,"line")
                         )
                   }
       })
@@ -992,6 +1003,11 @@ output$PseudotimeGOanalysisTimeshowresultwindowplotsave <- downloadHandler(
                   } else {
                         GOterm <- unique(as.vector(sapply(GOres,function(i) i[1:as.numeric(input$PseudotimeGOanalysisTimeselectresulttimetrendtop),1])))
                   }
+                  GOdes <- NULL
+                  for (i in GOres) {
+                        GOdes <- rbind(GOdes,as.matrix(i[,1:2]))
+                  }
+                  GOdes <- unique(GOdes)
                   rankres <- sapply(GOterm,function(term) {
                         sapply(GOres,function(i) {
                               tmp <- which(i[,1]==term)
@@ -1009,12 +1025,13 @@ output$PseudotimeGOanalysisTimeshowresultwindowplotsave <- downloadHandler(
                         tickpos <- tickpos[tickpos < termnum + 1]
                         tmpyset <- scale_y_reverse(lim=c(termnum + 1,1),breaks=c(tickpos,(termnum+1)),labels=c(tickpos,paste(">",termnum)))
                   }
-                  colnames(rankres)[2] <- "GOterm"
+                  colnames(rankres)[2] <- "GOTerm"
+                  rankres[,2] <- paste0(rankres[,2],"\n",sapply(rankres[,2], function(i) GOdes[GOdes[,1]==i,2]))
                   if (input$PseudotimeGOanalysisTimeselectresulttimetrendshowheatmap) {
-                        p <- ggplot(data=rankres, aes(x=Var1, y=GOterm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
+                        p <- ggplot(data=rankres, aes(x=Var1, y=GOTerm)) + geom_tile(aes(fill = value), colour = "white") + scale_fill_gradient2(low = "blue",high = "red",mid="white")
                   } else {
-                        p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOterm)) +
-                              geom_line(aes(group=GOterm)) + tmpyset +
+                        p <- ggplot(data = rankres, aes(x=Var1, y=value, colour=GOTerm)) +
+                              geom_line(aes(group=GOTerm)) + tmpyset +
                               geom_point(size=4)
                   }
                   p <- p + xlab("Interval") +
@@ -1031,7 +1048,8 @@ output$PseudotimeGOanalysisTimeshowresultwindowplotsave <- downloadHandler(
                               strip.text.y = element_text(size=17,color='black'),
                               legend.text = element_text(size=15),
                               legend.title = element_text(size=15),
-                              legend.position = "right"                              
+                              legend.position = "right",
+                              legend.key.width=unit(3,"line"),legend.key.height=unit(3,"line")
                         )
                   print(p)
             }
