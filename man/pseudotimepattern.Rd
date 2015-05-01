@@ -4,7 +4,7 @@
 \alias{pseudotimepattern}
 \title{pseudotimepattern}
 \usage{
-pseudotimepattern(expr, pseudotime, simplify = F, removeconstant = F,
+pseudotimepattern(expr, pseudotime, simplify = T, removeconstant = F,
   plot = F, gap = 10)
 }
 \arguments{

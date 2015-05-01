@@ -31,6 +31,7 @@ pseudotimepattern <- function(expr,pseudotime,simplify=T,removeconstant=F,plot=F
       }
       x <- pseudotime[,2]
       names(x) <- pseudotime[,1]
+      x <- sort(x)
       breakpoint <- rowMeans(cbind(x[-1],x[-length(x)]))
       breakpoint <- breakpoint[gap:(length(breakpoint)-gap+1)]
       spmat <- t(sapply(breakpoint,function(i) {
@@ -42,6 +43,7 @@ pseudotimepattern <- function(expr,pseudotime,simplify=T,removeconstant=F,plot=F
       fitexpr <- expr <- expr[rowSums(expr) > 0,]
       # use davies test to identify whether there is a transition point      
       print("Running davies test")
+      set.seed(1234)
       daviespval <- apply(expr,1,function(y) {
             tmpy <- y[(gap+1):(length(y)-gap)]
             tmpx <-x[(gap+1):(length(y)-gap)]
@@ -73,35 +75,40 @@ pseudotimepattern <- function(expr,pseudotime,simplify=T,removeconstant=F,plot=F
             y <- expr[transgene[i],]
             fit <- lm(y~x)
             o.seg1 <- tryCatch(segmented(fit,seg.Z=~x,psi=breakpoint[transpos[i]]),error=function(e) {}) 
-            if (is.null(o.seg1) || o.seg1$psi[2] <= x[gap] || o.seg1$psi[2] >= x[length(x)-gap+1]) {
+            if (is.null(o.seg1)) {
                   suppressWarnings(o.seg1 <- segmented(fit,seg.Z=~x,psi=breakpoint[transpos[i]],control = seg.control(n.boot=0,it.max=1)))            
             }      
-            slopecol <- rep("black",2)
-            for (j in 1:2) {
-                  if (slope(o.seg1)$x[j,4] * slope(o.seg1)$x[j,5] > 0) {
-                        if (slope(o.seg1)$x[j,4] > 0) {
-                              slopecol[j] <- "green"
-                        } else {
-                              slopecol[j] <- "red"
-                        }
-                  }
-            }
-            if (removeconstant) {
-                  slopecol <- slopecol[slopecol!="black"]
-            }
-            if (length(slopecol) < 2 | (simplify & slopecol[1] == slopecol[2])) {
+            if (o.seg1$psi[2] <= x[gap] || o.seg1$psi[2] >= x[length(x)-gap+1]) {
                   notransgene <- c(notransgene,transgene[i])
             } else {
-                  if (plot) {plot(x,y,pch=20,main=transgene[i])
-                             plot(o.seg1,add=T,link=F,lwd=3,col=slopecol,rug=F)
-                             lines(o.seg1,col="blue",pch=19,bottom=FALSE,lwd=2)
-                  }                  
-                  pattern[i,1] <- paste0(slopecol,collapse = "_")
-                  pattern[i,2] <- confint(o.seg1)$x[1]
-                  pattern[i,3] <- confint(o.seg1)$x[2]
-                  pattern[i,4] <- confint(o.seg1)$x[3]      
-                  fitexpr[transgene[i],] <- fitted(o.seg1)
-            }            
+                  slopecol <- rep("black",2)
+                  for (j in 1:2) {
+                        if (slope(o.seg1)$x[j,4] * slope(o.seg1)$x[j,5] > 0) {
+                              if (slope(o.seg1)$x[j,4] > 0) {
+                                    slopecol[j] <- "green"
+                              } else {
+                                    slopecol[j] <- "red"
+                              }
+                        }
+                  }
+                  if (removeconstant) {
+                        slopecol <- slopecol[slopecol!="black"]
+                  }
+                  if (length(slopecol) < 2 | (simplify & slopecol[1] == slopecol[2])) {
+                        notransgene <- c(notransgene,transgene[i])
+                  } else {
+                        if (plot) {
+                              plot(x,y,pch=20,main=transgene[i])
+                              plot(o.seg1,add=T,link=F,lwd=3,col=slopecol,rug=F)
+                              lines(o.seg1,col="blue",pch=19,bottom=FALSE,lwd=2)
+                        }                  
+                        pattern[i,1] <- paste0(slopecol,collapse = "_")
+                        pattern[i,2] <- confint(o.seg1)$x[1]
+                        pattern[i,3] <- confint(o.seg1)$x[2]
+                        pattern[i,4] <- confint(o.seg1)$x[3]      
+                        fitexpr[transgene[i],] <- fitted(o.seg1)
+                  }      
+            }                        
       }
       pattern <- pattern[pattern[,1]!="constant",]
       pattern[,1] <- gsub("black","constant",pattern[,1])
@@ -113,8 +120,7 @@ pseudotimepattern <- function(expr,pseudotime,simplify=T,removeconstant=F,plot=F
       pattern <- split(pattern,tmp)
       if (length(zerogene) > 0)
             pattern$zero <- zerogene      
-      notranspval <- sapply(notransgene,function(i) {
-            set.seed(1234)
+      notranspval <- sapply(notransgene,function(i) {            
             y <- expr[i,]
             fit <- lm(y~x)
             fitexpr[i,] <<- fitted(fit)

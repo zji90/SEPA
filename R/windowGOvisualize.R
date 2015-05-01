@@ -11,6 +11,7 @@
 #' @param mode To plot in heatmap or line graph. Either "Heatmap" or "Line".
 #' @return A ggplot2 object.
 #' @import ggplot2
+#' @importFrom grid unit
 #' @export
 #' @author Zhicheng Ji, Hongkai Ji <zji4@@zji4.edu>
 #' @examples
@@ -63,6 +64,7 @@ windowGOvisualize <- function(GOres,GOterm=NULL,topterm=2,mode="Heatmap") {
                   strip.text.y = element_text(size=17,color='black'),                  
                   legend.text = element_text(size=15),
                   legend.title = element_text(size=15),
-                  legend.position = "right"                  
+                  legend.position = "right",
+                  legend.key.width=unit(3,"line"),legend.key.height=unit(3,"line")
             )
 }
