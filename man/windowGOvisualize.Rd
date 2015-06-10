@@ -4,7 +4,7 @@
 \alias{windowGOvisualize}
 \title{windowGOvisualize}
 \usage{
-windowGOvisualize(GOres, GOterm = NULL, topterm = 2, mode = "Heatmap")
+windowGOvisualize(GOres, GOTerm = NULL, topterm = 2, mode = "Heatmap")
 }
 \arguments{
 \item{GOres}{The direct output of windowGOanalysis function.}
